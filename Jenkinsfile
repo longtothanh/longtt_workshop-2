@@ -108,13 +108,24 @@ pipeline {
             }
         success {
             echo 'Pipeline chạy thành công!'
-            script {
-                slackSend(
-                    channel: env.SLACK_CHANNEL,
-                    color: '#2EB67D',
-                    message: ":tada: *SUCCESS* — ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: `${env.BRANCH_NAME ?: 'main'}`\n${env.BUILD_URL}"
-                )
-            }
+                script {
+                    def author = sh(script: "git --no-pager log -1 --pretty=format:'%an'", returnStdout: true).trim()
+                    def commitMsg = sh(script: "git --no-pager log -1 --pretty=%s", returnStdout: true).trim()
+                    def commitTime = sh(script: "git --no-pager log -1 --date=iso --pretty=format:'%cd'", returnStdout: true).trim()
+                    slackSend(
+                        channel: env.SLACK_CHANNEL,
+                        color: '#2EB67D',
+                        message: """
+     Deployment Successful! :tada:
+     Author: ${author}
+     Commit: ${commitMsg}
+     Time: ${commitTime} UTC
+     Links:
+     • Firebase: https://diepttn-workshop2.web.app
+     • Remote: http://118.69.34.46/jenkins/dieptrinh2/deploy/current/
+     """
+                    )
+                }
         }
         failure {
             echo 'Pipeline gặp lỗi!'
