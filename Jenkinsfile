@@ -53,16 +53,22 @@ pipeline {
                 withCredentials([sshUserPrivateKey(credentialsId: 'NEWBIE_SSH_KEY', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                     script {
                         def releaseDir = env.RELEASE_DIR ?: new Date().format('yyyyMMdd')
-                        def remoteBase = "/usr/share/nginx/html/jenkins"
+                        def remoteBase = "/usr/share/nginx/html/jenkins/longtt"
                         def localSrc = "${env.WORKSPACE}"
-                        withEnv(["DEPLOY_SSH_KEY=${SSH_KEY}"]) {
+                        withEnv([
+                            "DEPLOY_SSH_KEY=${SSH_KEY}",
+                            "REMOTE_BASE=${remoteBase}",
+                            "RELEASE_DIR=${releaseDir}"
+                        ]) {
                             sh '''
                                 set -e
-                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "mkdir -p $remoteBase/deploy/$releaseDir && rm -rf $remoteBase/deploy/current"
-                                scp -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no -r ./web-performance-project1-initial/* $SSH_USER@10.1.1.195:$remoteBase/deploy/$releaseDir/
+                                # Tạo thư mục deploy mới trên remote
+                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "mkdir -p $REMOTE_BASE/deploy/$RELEASE_DIR && rm -rf $REMOTE_BASE/deploy/current"
+                                # Copy toàn bộ source sang remote deploy (giữ nguyên thư mục web-performance-project1-initial)
+                                scp -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no -r ./web-performance-project1-initial $SSH_USER@10.1.1.195:$REMOTE_BASE/deploy/$RELEASE_DIR/
                                 # Tạo symlink current
-                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "ln -sfn $remoteBase/deploy/$releaseDir $remoteBase/deploy/current"
-                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "cd $remoteBase/deploy && ls -1dt [0-9]* | tail -n +6 | xargs -r rm -rf"
+                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "ln -sfn $REMOTE_BASE/deploy/$RELEASE_DIR $REMOTE_BASE/deploy/current"
+                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "cd $REMOTE_BASE/deploy && ls -1dt [0-9]* | tail -n +6 | xargs -r rm -rf"
                             '''
                         }
                     }
