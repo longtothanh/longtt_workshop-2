@@ -6,13 +6,10 @@ pipeline {
     }
 
     environment {
-        // project name
         PROJECT_NAME = "longttworkshop2"
     }
 
-    triggers {
-        githubPush()
-    }
+    triggers { pollSCM('H/1 * * * *') }
 
     stages {
         stage('Checkout') {
