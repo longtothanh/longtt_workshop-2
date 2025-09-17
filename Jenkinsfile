@@ -121,8 +121,8 @@ pipeline {
      Commit: ${commitMsg}
      Time: ${commitTime} UTC
      Links:
-     • Firebase: https://diepttn-workshop2.web.app
-     • Remote: http://118.69.34.46/jenkins/dieptrinh2/deploy/current/
+     • Firebase: https://longttworkshop2.firebaseapp.com/
+     • Remote: http://10.1.1.195/jenkins/longtt/web-performance-project1-initial/
      """
                     )
                 }
