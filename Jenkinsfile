@@ -53,7 +53,7 @@ pipeline {
                 withCredentials([sshUserPrivateKey(credentialsId: 'NEWBIE_SSH_KEY', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                     script {
                         def releaseDir = env.RELEASE_DIR ?: new Date().format('yyyyMMdd')
-                        def remoteBase = "/home/newbie/longtt/template2"
+                        def remoteBase = "/usr/share/nginx/html/jenkins"
                         def localSrc = "${env.WORKSPACE}"
                         withEnv(["DEPLOY_SSH_KEY=${SSH_KEY}"]) {
                             sh '''
