@@ -87,7 +87,6 @@ pipeline {
                         tar -xzf "/tmp/site-\${releaseDir}.tar.gz" -C "\$remoteBase/deploy/\$releaseDir"
                         ln -sfn "\$remoteBase/deploy/\$releaseDir" "\$remoteBase/deploy/current"
                         rm -f "/tmp/site-\${releaseDir}.tar.gz"
-                    EOF
                     """
                 }
                 }
