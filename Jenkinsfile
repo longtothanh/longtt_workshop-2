@@ -55,15 +55,17 @@ pipeline {
                         def releaseDir = env.RELEASE_DIR ?: new Date().format('yyyyMMdd')
                         def remoteBase = "/home/newbie/longtt/template2"
                         def localSrc = "${env.WORKSPACE}"
-                        sh """
-                            set -e
-                            # Tạo thư mục deploy mới trên remote
-                            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "mkdir -p $remoteBase/deploy/$releaseDir && rm -rf $remoteBase/deploy/current"
-                            # Copy toàn bộ source sang remote deploy
-                            rsync -avz -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=no" --exclude deploy --exclude .git ./web-performance-project1-initial/ $SSH_USER@10.1.1.195:$remoteBase/deploy/$releaseDir/
-                            # Tạo symlink current
-                            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "ln -sfn $remoteBase/deploy/$releaseDir $remoteBase/deploy/current"
-                        """
+                        sh 'which rsync || (sudo apt-get update && sudo apt-get install -y rsync)'
+                        withEnv(["DEPLOY_SSH_KEY=${SSH_KEY}"]) {
+                            sh '''
+                                set -e
+                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "mkdir -p $remoteBase/deploy/$releaseDir && rm -rf $remoteBase/deploy/current"
+                                rsync -avz -e "ssh -i $DEPLOY_SSH_KEY -o StrictHostKeyChecking=no" --exclude deploy --exclude .git ./web-performance-project1-initial/ $SSH_USER@10.1.1.195:$remoteBase/deploy/$releaseDir/
+                                # Tạo symlink current
+                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "ln -sfn $remoteBase/deploy/$releaseDir $remoteBase/deploy/current"
+                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "cd $remoteBase/deploy && ls -1dt [0-9]* | tail -n +6 | xargs -r rm -rf"
+                            '''
+                        }
                     }
                 }
                 echo 'Deploy lên remote host hoàn thành!'
