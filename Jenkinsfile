@@ -9,7 +9,9 @@ pipeline {
         PROJECT_NAME = "longttworkshop2"
     }
 
-    triggers { pollSCM('H/1 * * * *') }
+    triggers {
+        pollSCM('H/1 * * * *')
+    }
 
     stages {
         stage('Checkout') {
