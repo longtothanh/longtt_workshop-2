@@ -9,6 +9,10 @@ pipeline {
         PROJECT_NAME = "longttworkshop2"
     }
 
+    triggers {
+        githubPush()
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -47,28 +51,45 @@ pipeline {
                 echo 'Deploy hoàn thành!'
             }
         }
+
         stage('Deploy to Remote Host') {
             steps {
                 echo '===== DEPLOY TO REMOTE HOST ====='
                 withCredentials([sshUserPrivateKey(credentialsId: 'NEWBIE_SSH_KEY', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
-                    script {
-                        def releaseDir = env.RELEASE_DIR ?: new Date().format('yyyyMMdd')
-                        def remoteBase = "/usr/share/nginx/html/jenkins/longtt"
-                        def localSrc = "${env.WORKSPACE}"
-                        withEnv([
-                            "DEPLOY_SSH_KEY=${SSH_KEY}",
-                            "REMOTE_BASE=${remoteBase}",
-                            "RELEASE_DIR=${releaseDir}"
-                        ]) {
-                            sh '''
-                                set -e
-                                # Tạo thư mục deploy mới trên remote
-                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "mkdir -p $REMOTE_BASE/deploy/$RELEASE_DIR && rm -rf $REMOTE_BASE/deploy/current"
-                                # Copy toàn bộ source sang remote deploy (giữ nguyên thư mục web-performance-project1-initial)
-                                scp -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no -r ./web-performance-project1-initial $SSH_USER@10.1.1.195:$REMOTE_BASE/deploy/$RELEASE_DIR/
-                            '''
-                        }
-                    }
+                script {
+                    def releaseDir = new Date().format('yyyyMMddHHmmss')
+                    def remoteBase = "/usr/share/nginx/html/jenkins/longtt"
+                    def host = "10.1.1.195"
+
+                    sh """
+                    set -e
+                    echo 'PWD:' && pwd
+                    echo 'List workspace:' && ls -la
+
+                    # Tạo gói deploy từ WORKSPACE, loại bỏ .git và node_modules nếu có
+                    TAR=/tmp/site-${releaseDir}.tar.gz
+                    tar --exclude='.git' --exclude='node_modules' -czf "\$TAR" -C "${env.WORKSPACE}" .
+
+                    # Tạo thư mục release trên remote
+                    ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ${SSH_USER}@${host} \\
+                        "mkdir -p ${remoteBase}/deploy/${releaseDir} && rm -rf ${remoteBase}/deploy/current"
+
+                    # Upload gói
+                    scp -i "${SSH_KEY}" -o StrictHostKeyChecking=no "\$TAR" \\
+                        ${SSH_USER}@${host}:/tmp/site-${releaseDir}.tar.gz
+
+                    # Giải nén & cập nhật symlink current
+                    ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ${SSH_USER}@${host} <<'EOF'
+                        set -e
+                        remoteBase="${remoteBase}"
+                        releaseDir="${releaseDir}"
+                        mkdir -p "\$remoteBase/deploy/\$releaseDir"
+                        tar -xzf "/tmp/site-\${releaseDir}.tar.gz" -C "\$remoteBase/deploy/\$releaseDir"
+                        ln -sfn "\$remoteBase/deploy/\$releaseDir" "\$remoteBase/deploy/current"
+                        rm -f "/tmp/site-\${releaseDir}.tar.gz"
+                    EOF
+                    """
+                }
                 }
                 echo 'Deploy lên remote host hoàn thành!'
             }
