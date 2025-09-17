@@ -6,6 +6,7 @@ pipeline {
     }
 
     environment {
+        // project name
         PROJECT_NAME = "longttworkshop2"
     }
 
@@ -138,7 +139,6 @@ pipeline {
     :x: *FAILED* — ${env.JOB_NAME} #${env.BUILD_NUMBER}
     *Branch:* `${env.BRANCH_NAME ?: 'main'}`
     ${env.BUILD_URL}
-
     *Last 50 lines of log:*
     ```
     ${tail.take(1900)}
