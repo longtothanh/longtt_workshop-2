@@ -66,9 +66,6 @@ pipeline {
                                 ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "mkdir -p $REMOTE_BASE/deploy/$RELEASE_DIR && rm -rf $REMOTE_BASE/deploy/current"
                                 # Copy toàn bộ source sang remote deploy (giữ nguyên thư mục web-performance-project1-initial)
                                 scp -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no -r ./web-performance-project1-initial $SSH_USER@10.1.1.195:$REMOTE_BASE/deploy/$RELEASE_DIR/
-                                # Tạo symlink current
-                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "ln -sfn $REMOTE_BASE/deploy/$RELEASE_DIR $REMOTE_BASE/deploy/current"
-                                ssh -i "$DEPLOY_SSH_KEY" -o StrictHostKeyChecking=no $SSH_USER@10.1.1.195 "cd $REMOTE_BASE/deploy && ls -1dt [0-9]* | tail -n +6 | xargs -r rm -rf"
                             '''
                         }
                     }
