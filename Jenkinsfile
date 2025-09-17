@@ -98,12 +98,43 @@ pipeline {
     post {
         always {
             echo 'Pipeline đã hoàn thành!'
-        }
+            script {
+                slackSend(
+                    channel: env.SLACK_CHANNEL,
+                    color: '#CCCCCC',
+                    message: ":information_source: *Finished* — ${env.JOB_NAME} #${env.BUILD_NUMBER} (status: ${currentBuild.currentResult})\n${env.BUILD_URL}"
+                )
+            }
+            }
         success {
             echo 'Pipeline chạy thành công!'
+            script {
+                slackSend(
+                    channel: env.SLACK_CHANNEL,
+                    color: '#2EB67D',
+                    message: ":tada: *SUCCESS* — ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: `${env.BRANCH_NAME ?: 'main'}`\n${env.BUILD_URL}"
+                )
+            }
         }
         failure {
             echo 'Pipeline gặp lỗi!'
+            script {
+                def tail = sh(script: "tail -n 50 ${env.WORKSPACE}/@tmp/durable-*/stdout 2>/dev/null || true", returnStdout: true).trim()
+                slackSend(
+                    channel: env.SLACK_CHANNEL,
+                    color: '#E01E5A',
+                    message: """
+    :x: *FAILED* — ${env.JOB_NAME} #${env.BUILD_NUMBER}
+    *Branch:* `${env.BRANCH_NAME ?: 'main'}`
+    ${env.BUILD_URL}
+
+    *Last 50 lines of log:*
+    ```
+    ${tail.take(1900)}
+    ```
+    """
+                )
+            }
         }
     }
 }
